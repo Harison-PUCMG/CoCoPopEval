@@ -277,6 +277,46 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
 .tool-btn[data-cat="reset"] { border-color: var(--condition-border); color: var(--condition); }
 .tool-btn[data-cat="reset"]:hover { background: var(--condition-bg); }
 
+/* ── Mobile guard bar between tools and text ── */
+.tools-text-guard {
+  display: none;
+}
+@media (max-width: 768px) {
+  .tools-text-guard {
+    display: block;
+    height: 18px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--border) 0px,
+      var(--border) 6px,
+      transparent 6px,
+      transparent 12px
+    );
+    opacity: 0.5;
+    border-top: 3px solid var(--border);
+    border-bottom: 3px solid var(--border);
+    position: relative;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    flex-shrink: 0;
+  }
+  .tools-text-guard::after {
+    content: '⋯ arraste abaixo ⋯';
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    background: var(--bg-tertiary);
+    padding: 0 0.6rem;
+    white-space: nowrap;
+  }
+}
+
 /* Text display */
 .text-display {
   padding: 2.5rem 3rem; line-height: 2.6;
@@ -332,12 +372,6 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
 .text-display .word.cmp-extra {
   outline: 2px solid var(--wrong); outline-offset: 2px; border-radius: 5px;
   text-decoration: line-through; text-decoration-color: var(--wrong);
-}
-
-/* Comparison: gabarito underlay */
-.text-display .word .gab-underlay {
-  position: absolute; bottom: -4px; left: 0; right: 0; height: 3px;
-  border-radius: 2px;
 }
 
 /* Action bar */
@@ -396,14 +430,16 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
   width: 16px; height: 10px; border-radius: 3px;
 }
 
-/* Summary */
+/* ── Summary: Cards layout (replaces table) ── */
 .summary-section { margin-top: 2rem; }
-.summary-table {
+
+/* Desktop: table-like layout */
+.summary-cards-desktop {
   width: 100%; background: var(--bg-secondary);
   border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
 }
-.summary-table table { width: 100%; border-collapse: collapse; }
-.summary-table th {
+.summary-cards-desktop table { width: 100%; border-collapse: collapse; }
+.summary-cards-desktop th {
   background: var(--bg-tertiary);
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.72rem; font-weight: 600;
@@ -411,10 +447,50 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
   color: var(--text-secondary); padding: 0.9rem 1.25rem;
   text-align: left; border-bottom: 1px solid var(--border);
 }
-.summary-table td {
+.summary-cards-desktop td {
   padding: 0.8rem 1.25rem; border-bottom: 1px solid var(--border); font-size: 0.92rem;
 }
-.summary-table tr:last-child td { border-bottom: none; }
+.summary-cards-desktop tr:last-child td { border-bottom: none; }
+
+/* Mobile: stacked cards */
+.summary-cards-mobile { display: none; }
+
+.summary-cat-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 0.8rem;
+}
+.summary-cat-card-header {
+  padding: 0.75rem 1rem;
+  display: flex; align-items: center; gap: 0.5rem;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+.summary-cat-card-header .cat-dot {
+  width: 12px; height: 12px; border-radius: 4px; display: inline-block; flex-shrink: 0;
+}
+.summary-cat-card-header.card-Co { background: var(--condition-bg); color: var(--condition); border-bottom-color: var(--condition-border); }
+.summary-cat-card-header.card-Cx { background: var(--context-bg); color: var(--context); border-bottom-color: var(--context-border); }
+.summary-cat-card-header.card-Pop { background: var(--population-bg); color: var(--population); border-bottom-color: var(--population-border); }
+
+.summary-cat-card-body { padding: 0.9rem 1rem; }
+.summary-cat-card-row {
+  margin-bottom: 0.7rem;
+}
+.summary-cat-card-row:last-child { margin-bottom: 0; }
+.summary-cat-card-row-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
 .cat-label {
   font-weight: 700; font-family: 'JetBrains Mono', monospace;
   font-size: 0.82rem; display: inline-flex; align-items: center; gap: 0.45rem;
@@ -428,6 +504,11 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
 .tag-Co { background: var(--condition-bg); color: var(--condition); border: 1px solid var(--condition-border); }
 .tag-Cx { background: var(--context-bg); color: var(--context); border: 1px solid var(--context-border); }
 .tag-Pop { background: var(--population-bg); color: var(--population); border: 1px solid var(--population-border); }
+
+@media (max-width: 768px) {
+  .summary-cards-desktop { display: none; }
+  .summary-cards-mobile { display: block; }
+}
 
 /* Empty & Loading */
 .empty-state { text-align: center; padding: 5rem 2rem; color: var(--text-muted); }
@@ -589,7 +670,7 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
   .logo h1 { font-size: 1.4rem; }
   .legend { gap: 0.8rem; padding: 0.9rem; }
   .class-tools { gap: 0.3rem; }
-  .tool-btn { padding: 0.4rem 0.7rem; font-size: 0.68rem; }
+  .tool-btn { padding: 0.45rem 0.8rem; font-size: 0.7rem; }
   .tool-btn .key-hint { display: none; }
   .case-item-preview { display: none; }
   .feedback-score { gap: 0.8rem; }
@@ -644,7 +725,7 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
       <!-- Manual case management (professor only) -->
       <details style="margin-top:1rem;">
         <summary style="cursor:pointer;color:var(--text-secondary);font-size:0.85rem;font-weight:600;">
-          📋 Gerenciar Casos Manualmente (Professor)
+          📋 Gerenciar Casos Manualmente (Professores)
         </summary>
         <div style="padding-top:1rem;">
           <div style="margin-bottom:1.2rem;">
@@ -705,6 +786,8 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
         <button class="tool-btn" data-cat="reset" onclick="resetAll()">⟲ Reset</button>
       </div>
     </div>
+    <!-- Guard bar: visual + touch separator between tools and text on mobile -->
+    <div class="tools-text-guard" id="toolsGuard"></div>
     <div class="text-display" id="textDisplay">
       <div class="empty-state">
         <div class="icon"><span class="loading-spinner"></span></div>
@@ -739,9 +822,10 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
     </div>
   </div>
 
-  <!-- SUMMARY TABLE -->
+  <!-- SUMMARY: Desktop table + Mobile cards -->
   <div class="summary-section" id="summarySection" style="display:none;">
-    <div class="summary-table">
+    <!-- Desktop: table -->
+    <div class="summary-cards-desktop">
       <table>
         <thead><tr><th style="width:170px;">Componente</th><th>Termos (Aluno)</th><th>Termos (Gabarito)</th></tr></thead>
         <tbody>
@@ -763,6 +847,8 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
         </tbody>
       </table>
     </div>
+    <!-- Mobile: stacked cards per category -->
+    <div class="summary-cards-mobile" id="summaryCardsMobile"></div>
   </div>
 
   <!-- FINAL REPORT OVERLAY -->
@@ -773,12 +859,12 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
 <script>
 // ─── State ───
 const DEFAULT_GIST = 'https://gist.github.com/Harison-PUCMG/872dde374545f17cf33a9b9899a1b5b0';
-let cases = [];           // {id, title, text, classifications:{wordIdx: cat}}
+let cases = [];
 let currentIdx = -1;
-let words = [];           // {text, cat(student), id}
+let words = [];
 let activeTool = null;
 let isDragging = false, dragStart = null, dragEnd = null;
-let caseStates = {};      // caseId -> {studentMap:{}, submitted:bool}
+let caseStates = {};
 let editingCaseId = null;
 
 // ─── Storage ───
@@ -797,16 +883,12 @@ function getStoredGistUrl() { return localStorage.getItem('cocopop_gist_url') ||
 function setStoredGistUrl(u) { localStorage.setItem('cocopop_gist_url', u); }
 
 function gistToRawUrl(url) {
-  // Accept various gist formats and convert to raw JSON
   url = url.trim();
-  // Already raw
   if (url.includes('gist.githubusercontent.com') && url.includes('/raw')) return url;
-  // Extract gist ID from various formats
   let match = url.match(/gist\.github\.com\/[\w-]+\/([a-f0-9]+)/);
   if (!match) match = url.match(/([a-f0-9]{20,})/);
   if (match) {
     const gistId = match[1];
-    // Use the Gist API to get raw content
     return `https://api.github.com/gists/${gistId}`;
   }
   return url;
@@ -822,11 +904,9 @@ async function fetchGist(url) {
     let data;
 
     if (apiUrl.includes('api.github.com/gists/')) {
-      // Fetch via GitHub API
       const resp = await fetch(apiUrl);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const gist = await resp.json();
-      // Find JSON file in gist
       const files = Object.values(gist.files);
       const jsonFile = files.find(f => f.filename.endsWith('.json')) || files[0];
       if (!jsonFile) throw new Error('Nenhum arquivo encontrado no Gist');
@@ -839,7 +919,6 @@ async function fetchGist(url) {
 
     if (!data.cases || !Array.isArray(data.cases)) throw new Error('Formato inválido: campo "cases" ausente');
 
-    // Load cases with answer key
     cases = data.cases.map(c => ({
       id: c.id || 'c' + Math.random().toString(36).substr(2,9),
       title: c.title,
@@ -872,7 +951,6 @@ function initAfterLoad() {
   restoreStates();
   renderProgress();
   if (cases.length) {
-    // Find first unsubmitted, or first
     const firstUnsub = cases.findIndex(c => !getCaseState(c.id).submitted);
     activateCase(firstUnsub >= 0 ? firstUnsub : 0);
   }
@@ -892,7 +970,6 @@ function activateCase(idx) {
 
   tokenize(c.text);
 
-  // Restore student's previous annotations
   words.forEach(w => {
     if (state.studentMap[w.id] !== undefined) w.cat = state.studentMap[w.id];
   });
@@ -949,7 +1026,6 @@ function renderReviewMode() {
     document.getElementById('btnNext').onclick = showFinalReport;
     document.getElementById('btnNext').className = 'btn btn-success';
   } else if (isLast) {
-    // Not all done — find first unsubmitted
     document.getElementById('btnNext').textContent = '→ Caso pendente';
     document.getElementById('btnNext').disabled = false;
     document.getElementById('btnNext').onclick = () => {
@@ -965,7 +1041,6 @@ function renderReviewMode() {
   }
   document.getElementById('actionInfo').textContent = 'Revise os resultados abaixo';
 
-  // Render words with comparison classes
   const el = document.getElementById('textDisplay');
   el.classList.add('review-mode');
   el.innerHTML = words.map(w => {
@@ -975,26 +1050,24 @@ function renderReviewMode() {
     let cmpCls = '';
 
     if (stu && ans && stu === ans) {
-      cmpCls = 'cmp-correct';       // exact match
+      cmpCls = 'cmp-correct';
     } else if (stu && ans && stu !== ans) {
-      cmpCls = 'cmp-wrong-cat';     // both tagged but different cat
+      cmpCls = 'cmp-wrong-cat';
     } else if (!stu && ans) {
-      cmpCls = 'cmp-missed';        // student missed, gabarito expected
+      cmpCls = 'cmp-missed';
     } else if (stu && !ans) {
-      cmpCls = 'cmp-extra';         // student tagged, gabarito didn't
+      cmpCls = 'cmp-extra';
     }
 
     return `<span class="word ${cls} ${cmpCls}" data-id="${w.id}">${esc(w.text)}</span> `;
   }).join('');
 
-  // Show feedback
   showFeedback(gab, state.studentMap);
   renderSummaryComparison(gab);
 }
 
 function showEditControls(show) {
   document.querySelectorAll('.tool-btn').forEach(b => b.style.display = show ? '' : 'none');
-  // Keep tools area visible but contents hidden
 }
 
 function renderEmpty() {
@@ -1009,7 +1082,6 @@ function showFeedback(gab, stuMap) {
   const panel = document.getElementById('feedbackPanel');
   panel.style.display = 'block';
 
-  // Compute scores
   const gabWords = new Set(Object.keys(gab).map(Number));
   const stuWords = new Set(Object.keys(stuMap).filter(k => stuMap[k]).map(Number));
 
@@ -1034,49 +1106,98 @@ function showFeedback(gab, stuMap) {
   `;
 }
 
-function renderSummary() {
+function extractPhrasesFromWords(wordsList) {
   const cats = { Co: [], Cx: [], Pop: [] };
   let i = 0;
-  while (i < words.length) {
-    const w = words[i];
+  while (i < wordsList.length) {
+    const w = wordsList[i];
     if (w.cat && cats[w.cat]) {
       let phrase = [w.text]; let j = i + 1;
-      while (j < words.length && words[j].cat === w.cat) { phrase.push(words[j].text); j++; }
+      while (j < wordsList.length && wordsList[j].cat === w.cat) { phrase.push(wordsList[j].text); j++; }
       cats[w.cat].push(phrase.join(' ')); i = j;
     } else { i++; }
   }
+  return cats;
+}
+
+function renderSummary() {
+  const cats = extractPhrasesFromWords(words);
   const any = Object.values(cats).some(a => a.length);
   document.getElementById('summarySection').style.display = any ? 'block' : 'none';
+
+  // Desktop table
   ['Co','Cx','Pop'].forEach(c => {
     document.getElementById('s'+c).innerHTML = cats[c].length
       ? cats[c].map(t => `<span class="word-tag tag-${c}">${esc(t)}</span>`).join('')
       : '<span style="color:var(--text-muted);font-size:0.82rem;">—</span>';
+    // Clear gabarito column when not in review
+    document.getElementById('g'+c).innerHTML = '<span style="color:var(--text-muted);font-size:0.82rem;">—</span>';
   });
+
+  // Mobile cards (student only, no gabarito yet)
+  renderMobileCards(cats, null);
 }
 
 function renderSummaryComparison(gab) {
-  // Also show gabarito terms
   const c = cases[currentIdx];
-  const gabWords = [];
-  (c.text.match(/\S+/g) || []).forEach((t, i) => gabWords.push({ text: t, cat: gab[i] || null, id: i }));
+  const gabWordsList = [];
+  (c.text.match(/\S+/g) || []).forEach((t, i) => gabWordsList.push({ text: t, cat: gab[i] || null, id: i }));
+  const gabCats = extractPhrasesFromWords(gabWordsList);
+  const stuCats = extractPhrasesFromWords(words);
 
-  const cats = { Co: [], Cx: [], Pop: [] };
-  let i = 0;
-  while (i < gabWords.length) {
-    const w = gabWords[i];
-    if (w.cat && cats[w.cat]) {
-      let phrase = [w.text]; let j = i + 1;
-      while (j < gabWords.length && gabWords[j].cat === w.cat) { phrase.push(gabWords[j].text); j++; }
-      cats[w.cat].push(phrase.join(' ')); i = j;
-    } else { i++; }
-  }
+  // Desktop table: gabarito column
   ['Co','Cx','Pop'].forEach(c => {
-    document.getElementById('g'+c).innerHTML = cats[c].length
-      ? cats[c].map(t => `<span class="word-tag tag-${c}">${esc(t)}</span>`).join('')
+    document.getElementById('g'+c).innerHTML = gabCats[c].length
+      ? gabCats[c].map(t => `<span class="word-tag tag-${c}">${esc(t)}</span>`).join('')
       : '<span style="color:var(--text-muted);font-size:0.82rem;">—</span>';
   });
 
   document.getElementById('summarySection').style.display = 'block';
+
+  // Mobile cards with comparison
+  renderMobileCards(stuCats, gabCats);
+}
+
+function renderMobileCards(stuCats, gabCats) {
+  const catMeta = [
+    { key: 'Co', label: 'Condition (Condição)', color: 'var(--condition)', headerClass: 'card-Co' },
+    { key: 'Cx', label: 'Context (Contexto)', color: 'var(--context)', headerClass: 'card-Cx' },
+    { key: 'Pop', label: 'Population (População)', color: 'var(--population)', headerClass: 'card-Pop' },
+  ];
+
+  const container = document.getElementById('summaryCardsMobile');
+  container.innerHTML = catMeta.map(m => {
+    const stuTags = stuCats[m.key].length
+      ? stuCats[m.key].map(t => `<span class="word-tag tag-${m.key}">${esc(t)}</span>`).join(' ')
+      : '<span style="color:var(--text-muted);font-size:0.82rem;">—</span>';
+
+    let gabRow = '';
+    if (gabCats) {
+      const gabTags = gabCats[m.key].length
+        ? gabCats[m.key].map(t => `<span class="word-tag tag-${m.key}">${esc(t)}</span>`).join(' ')
+        : '<span style="color:var(--text-muted);font-size:0.82rem;">—</span>';
+      gabRow = `
+        <div class="summary-cat-card-row">
+          <div class="summary-cat-card-row-label">✅ Gabarito Professores</div>
+          <div class="words-list">${gabTags}</div>
+        </div>`;
+    }
+
+    return `
+    <div class="summary-cat-card">
+      <div class="summary-cat-card-header ${m.headerClass}">
+        <span class="cat-dot" style="background:${m.color}"></span>
+        ${m.label}
+      </div>
+      <div class="summary-cat-card-body">
+        <div class="summary-cat-card-row">
+          <div class="summary-cat-card-row-label">🎯 Sua Classificação</div>
+          <div class="words-list">${stuTags}</div>
+        </div>
+        ${gabRow}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ─── Progress ───
@@ -1108,7 +1229,6 @@ function submitAnswer() {
   const c = cases[currentIdx];
   const state = getCaseState(c.id);
 
-  // Save student map
   const m = {};
   words.forEach(w => { if (w.cat) m[w.id] = w.cat; });
   state.studentMap = m;
@@ -1222,7 +1342,7 @@ function initDragSelect() {
   display.addEventListener('mouseup', finishDrag);
   document.addEventListener('mouseup', () => { if (isDragging) finishDrag(); });
 
-  // Touch
+  // Touch — prevent starting drag from the guard bar
   display.addEventListener('touchstart', e => {
     if (display.classList.contains('review-mode')) return;
     const touch = e.touches[0];
@@ -1243,6 +1363,11 @@ function initDragSelect() {
     if (wordEl) { const id = parseInt(wordEl.dataset.id); if (id !== dragEnd) { dragEnd = id; updateDragHighlight(); } }
   }, { passive: false });
   display.addEventListener('touchend', e => { if (isDragging) { e.preventDefault(); finishDrag(); } });
+
+  // Guard bar: consume touch events to prevent accidental selection
+  const guard = document.getElementById('toolsGuard');
+  guard.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+  guard.addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
 }
 
 // ─── Admin CRUD (professor) ───
@@ -1382,7 +1507,6 @@ function extractPhrases(text, classMap) {
 function showFinalReport() {
   const overlay = document.getElementById('finalReportOverlay');
 
-  // Global totals
   let gCorrect = 0, gWrongCat = 0, gMissed = 0, gExtra = 0, gTotal = 0;
   const caseScores = cases.map(c => {
     const s = computeCaseScore(c);
@@ -1392,7 +1516,6 @@ function showFinalReport() {
   });
   const globalPct = gTotal > 0 ? Math.round((gCorrect / gTotal) * 100) : 0;
 
-  // Build per-case HTML
   let casesHtml = '';
   cases.forEach((c, ci) => {
     const s = caseScores[ci];
@@ -1401,7 +1524,6 @@ function showFinalReport() {
     const stuMap = state.studentMap || {};
     const pctCls = s.pct >= 70 ? 'good' : s.pct >= 40 ? 'mid' : 'low';
 
-    // Build annotated text
     const tokens = c.text.match(/\S+/g) || [];
     const textHtml = tokens.map((t, i) => {
       const stu = stuMap[i] || null;
@@ -1415,7 +1537,6 @@ function showFinalReport() {
       return `<span class="rw ${cls} ${cmpCls}">${esc(t)}</span>`;
     }).join(' ');
 
-    // Extract phrases
     const stuPhrases = extractPhrases(c.text, stuMap);
     const gabPhrases = extractPhrases(c.text, gab);
 
@@ -1443,7 +1564,7 @@ function showFinalReport() {
             <div class="words-list">${termsHtml(stuPhrases, 'stu')}</div>
           </div>
           <div class="report-terms-col">
-            <h5>✅ Gabarito do Professor</h5>
+            <h5>✅ Gabarito Professores</h5>
             <div class="words-list">${termsHtml(gabPhrases, 'gab')}</div>
           </div>
         </div>
@@ -1496,8 +1617,6 @@ function closeFinalReport() {
 function printFinalReport() {
   const overlay = document.getElementById('finalReportOverlay');
   const content = overlay.querySelector('.final-report').outerHTML;
-
-  // Collect current styles
   const styles = document.querySelector('style').textContent;
 
   const printHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>CoCoPop — Relatório Final</title>
@@ -1554,12 +1673,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   initDragSelect();
   restoreStates();
 
-  // Close report overlay on background click
   document.getElementById('finalReportOverlay').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeFinalReport();
   });
 
-  // Check URL param for gist override
   const params = new URLSearchParams(window.location.search);
   const gistParam = params.get('gist');
 
@@ -1568,7 +1685,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const ok = await fetchGist(url);
   if (!ok && url !== DEFAULT_GIST) {
-    // Fallback to default
     toast('Tentando gist padrão…');
     await fetchGist(DEFAULT_GIST);
   }
