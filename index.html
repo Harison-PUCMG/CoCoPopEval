@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CoCoPop — Classificador de Casos Clínicos</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%231a1a2e' stroke='%23e2e8f0' stroke-width='1.5'/%3E%3Ccircle cx='32' cy='22' r='13' fill='%233b82f6' fill-opacity='0.7' stroke='%2360a5fa' stroke-width='1'/%3E%3Ccircle cx='23' cy='36' r='13' fill='%2310b981' fill-opacity='0.7' stroke='%2334d399' stroke-width='1'/%3E%3Ccircle cx='41' cy='36' r='13' fill='%23f59e0b' fill-opacity='0.7' stroke='%23fbbf24' stroke-width='1'/%3E%3Ccircle cx='32' cy='31' r='2' fill='%23fff' fill-opacity='0.9'/%3E%3Ctext x='32' y='20' text-anchor='middle' font-family='Arial' font-size='6.5' font-weight='bold' fill='%23fff'%3ECo%3C/text%3E%3Ctext x='23' y='38' text-anchor='middle' font-family='Arial' font-size='6.5' font-weight='bold' fill='%23fff'%3ECo%3C/text%3E%3Ctext x='41' y='38' text-anchor='middle' font-family='Arial' font-size='6.5' font-weight='bold' fill='%23fff'%3EPop%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Source+Sans+3:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --condition: #E63946;
+  --condition-bg: #E6394618;
+  --condition-border: #E6394660;
+  --context: #2A9D8F;
+  --context-bg: #2A9D8F18;
+  --context-border: #2A9D8F60;
+  --population: #E9C46A;
+  --population-bg: #E9C46A20;
+  --population-border: #E9C46A70;
+  --correct: #22c55e;
+  --correct-bg: rgba(34,197,94,0.12);
+  --correct-border: rgba(34,197,94,0.5);
+  --wrong: #ef4444;
+  --wrong-bg: rgba(239,68,68,0.12);
+  --wrong-border: rgba(239,68,68,0.5);
+  --missed: #a78bfa;
+  --missed-bg: rgba(167,139,250,0.12);
+  --missed-border: rgba(167,139,250,0.5);
+  --bg-primary: #0D1117;
+  --bg-secondary: #161B22;
+  --bg-tertiary: #1C2333;
+  --bg-card: #1A1F2E;
+  --text-primary: #E6EDF3;
+  --text-secondary: #8B949E;
+  --text-muted: #6E7681;
+  --border: #30363D;
+  --accent: #58A6FF;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Source Sans 3', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999;
+}
+
+/* Header */
+header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 1.2rem 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  backdrop-filter: blur(12px);
+}
+.logo { display: flex; align-items: baseline; gap: 0.6rem; }
+.logo h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900; font-size: 1.8rem;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--condition), var(--context), var(--population));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.logo span {
+  font-size: 0.75rem; color: var(--text-muted);
+  font-weight: 300; letter-spacing: 0.15em; text-transform: uppercase;
+}
+.header-right { display: flex; gap: 0.75rem; align-items: center; }
+.mode-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; padding: 0.3rem 0.7rem;
+  border-radius: 20px; letter-spacing: 0.06em;
+  background: rgba(88,166,255,0.1); border: 1px solid var(--accent); color: var(--accent);
+  transition: all 0.3s;
+}
+.mode-badge.editing { background: rgba(233,196,106,0.12); border-color: var(--population); color: var(--population); }
+
+/* Buttons */
+.btn {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.82rem; font-weight: 600;
+  padding: 0.55rem 1.1rem; border: 1px solid var(--border);
+  border-radius: 8px; background: var(--bg-tertiary);
+  color: var(--text-primary); cursor: pointer;
+  transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.45rem;
+}
+.btn:hover { background: var(--bg-card); border-color: var(--text-muted); transform: translateY(-1px); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #000; }
+.btn-primary:hover { background: #79bbff; border-color: #79bbff; }
+.btn-danger { border-color: var(--condition-border); color: var(--condition); }
+.btn-danger:hover { background: var(--condition-bg); }
+.btn-sm { padding: 0.3rem 0.6rem; font-size: 0.75rem; }
+.btn-icon {
+  width: 36px; height: 36px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; border-radius: 8px;
+}
+.btn-success { background: var(--correct); border-color: var(--correct); color: #000; font-weight: 700; }
+.btn-success:hover { background: #4ade80; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+.main-container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+/* Admin Panel */
+.admin-panel {
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  border-radius: 16px; margin-bottom: 2rem; overflow: hidden;
+  animation: slideDown 0.35s ease;
+}
+@keyframes slideDown { from { opacity:0; transform:translateY(-16px); } to { opacity:1; transform:translateY(0); } }
+.admin-panel.hidden { display: none; }
+.admin-top {
+  padding: 1.1rem 1.5rem; background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.admin-top h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem; font-weight: 700;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.admin-body { padding: 1.5rem; }
+.form-group { margin-bottom: 1.2rem; }
+.form-group label {
+  display: block; font-size: 0.75rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--text-secondary); margin-bottom: 0.45rem;
+}
+textarea, input[type="text"] {
+  width: 100%; background: var(--bg-primary);
+  border: 1px solid var(--border); border-radius: 10px;
+  padding: 0.75rem 1.1rem; color: var(--text-primary);
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.95rem; line-height: 1.7; transition: border-color 0.2s;
+}
+textarea { min-height: 130px; resize: vertical; }
+textarea:focus, input[type="text"]:focus { outline: none; border-color: var(--accent); }
+textarea::placeholder, input::placeholder { color: var(--text-muted); }
+.form-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.cases-list-title {
+  font-size: 0.75rem; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--text-muted);
+  margin-bottom: 0.6rem; font-weight: 600;
+}
+.case-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.65rem 0.9rem; background: var(--bg-primary);
+  border: 1px solid var(--border); border-radius: 8px;
+  margin-bottom: 0.4rem; cursor: pointer; transition: all 0.2s;
+}
+.case-item:hover { border-color: var(--accent); background: var(--bg-tertiary); }
+.case-item.active { border-color: var(--accent); background: rgba(88,166,255,0.07); }
+.case-item-title {
+  font-weight: 600; font-size: 0.88rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex: 1; margin-right: 0.75rem;
+}
+.case-item-preview {
+  font-size: 0.78rem; color: var(--text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 350px; margin-right: 0.75rem;
+}
+.case-item-actions { display: flex; gap: 0.35rem; }
+
+/* Gist config */
+.gist-config {
+  background: var(--bg-primary); border: 1px solid var(--border);
+  border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: 1.2rem;
+}
+.gist-config-row {
+  display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;
+}
+.gist-config-row input { flex: 1; min-width: 250px; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; }
+.gist-status {
+  font-size: 0.78rem; margin-top: 0.5rem;
+  color: var(--text-muted); font-style: italic;
+}
+.gist-status.ok { color: var(--correct); font-style: normal; }
+.gist-status.err { color: var(--condition); font-style: normal; }
+
+/* Legend */
+.legend {
+  display: flex; gap: 1.5rem; flex-wrap: wrap;
+  padding: 1.1rem 1.5rem; background: var(--bg-secondary);
+  border: 1px solid var(--border); border-radius: 12px;
+  margin-bottom: 1.5rem; align-items: center;
+}
+.legend-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem; font-weight: 500;
+  color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.15em;
+}
+.legend-item { display: flex; align-items: center; gap: 0.45rem; font-size: 0.85rem; font-weight: 500; }
+.legend-swatch { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; }
+.swatch-co { background: var(--condition); }
+.swatch-cx { background: var(--context); }
+.swatch-pop { background: var(--population); }
+.legend-code { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 0.78rem; }
+
+/* Progress bar */
+.progress-bar-wrap {
+  margin-bottom: 1.5rem; background: var(--bg-secondary);
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 1rem 1.5rem;
+}
+.progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; }
+.progress-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+.progress-count { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--accent); }
+.progress-track {
+  height: 6px; background: var(--bg-primary);
+  border-radius: 3px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--condition), var(--context), var(--population));
+  transition: width 0.5s ease;
+}
+.progress-dots { display: flex; gap: 0.4rem; margin-top: 0.6rem; flex-wrap: wrap; }
+.progress-dot {
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.65rem;
+  font-weight: 600; cursor: pointer; transition: all 0.2s;
+  border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-muted);
+}
+.progress-dot.current { border-color: var(--accent); background: rgba(88,166,255,0.15); color: var(--accent); }
+.progress-dot.done { border-color: var(--correct-border); background: var(--correct-bg); color: var(--correct); }
+.progress-dot.reviewed { border-color: var(--correct); background: var(--correct); color: #000; }
+.progress-dot:hover { transform: translateY(-2px); }
+
+/* Classification */
+.classification-area {
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  border-radius: 16px; overflow: hidden;
+}
+.class-header {
+  padding: 1.1rem 1.5rem; background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 1rem;
+}
+.class-header-left h2 { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; }
+.class-header-left .subtitle { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem; }
+.class-tools { display: flex; gap: 0.45rem; flex-wrap: wrap; align-items: center; }
+.tool-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem; font-weight: 500;
+  padding: 0.5rem 1rem; border: 2px solid transparent;
+  border-radius: 8px; cursor: pointer; transition: all 0.2s;
+  background: var(--bg-primary); color: var(--text-secondary);
+}
+.tool-btn .key-hint {
+  display: inline-block; background: rgba(255,255,255,0.08);
+  border-radius: 3px; padding: 0 0.35em; font-size: 0.65rem;
+  margin-left: 0.4em; color: var(--text-muted);
+}
+.tool-btn:hover { transform: translateY(-1px); }
+.tool-btn[data-cat="Co"] { border-color: var(--condition-border); color: var(--condition); }
+.tool-btn[data-cat="Co"].active, .tool-btn[data-cat="Co"]:hover { background: var(--condition); color: #fff; box-shadow: 0 0 24px var(--condition-bg); }
+.tool-btn[data-cat="Cx"] { border-color: var(--context-border); color: var(--context); }
+.tool-btn[data-cat="Cx"].active, .tool-btn[data-cat="Cx"]:hover { background: var(--context); color: #fff; box-shadow: 0 0 24px var(--context-bg); }
+.tool-btn[data-cat="Pop"] { border-color: var(--population-border); color: var(--population); }
+.tool-btn[data-cat="Pop"].active, .tool-btn[data-cat="Pop"]:hover { background: var(--population); color: #000; box-shadow: 0 0 24px var(--population-bg); }
+.tool-btn[data-cat="clear"] { border-color: var(--border); color: var(--text-muted); }
+.tool-btn[data-cat="clear"]:hover, .tool-btn[data-cat="clear"].active { background: var(--bg-tertiary); color: var(--text-primary); }
+.tool-btn[data-cat="reset"] { border-color: var(--condition-border); color: var(--condition); }
+.tool-btn[data-cat="reset"]:hover { background: var(--condition-bg); }
+
+/* Text display */
+.text-display {
+  padding: 2.5rem 3rem; line-height: 2.6;
+  font-size: 1.65rem; font-weight: 400;
+  color: var(--text-primary); user-select: none; min-height: 200px;
+}
+.text-display .word {
+  display: inline; padding: 0.12em 0.04em;
+  border-radius: 4px; cursor: pointer;
+  transition: all 0.18s ease; border-bottom: 2px solid transparent;
+}
+.text-display .word:hover { background: rgba(255,255,255,0.07); border-bottom-color: rgba(255,255,255,0.15); }
+.text-display .word.cat-Co {
+  background: var(--condition); color: #fff; border-radius: 5px;
+  padding: 0.08em 0.3em; margin: 0 0.04em; font-weight: 600;
+  box-shadow: 0 2px 10px rgba(230,57,70,0.35);
+  border-bottom-color: transparent; animation: popIn 0.2s ease;
+}
+.text-display .word.cat-Cx {
+  background: var(--context); color: #fff; border-radius: 5px;
+  padding: 0.08em 0.3em; margin: 0 0.04em; font-weight: 600;
+  box-shadow: 0 2px 10px rgba(42,157,143,0.35);
+  border-bottom-color: transparent; animation: popIn 0.2s ease;
+}
+.text-display .word.cat-Pop {
+  background: var(--population); color: #1a1a1a; border-radius: 5px;
+  padding: 0.08em 0.3em; margin: 0 0.04em; font-weight: 600;
+  box-shadow: 0 2px 10px rgba(233,196,106,0.35);
+  border-bottom-color: transparent; animation: popIn 0.2s ease;
+}
+@keyframes popIn { 0% { transform: scale(0.92); opacity: 0.6; } 100% { transform: scale(1); opacity: 1; } }
+.text-display .word.selecting { background: rgba(88,166,255,0.25); border-bottom-color: var(--accent); border-radius: 4px; }
+.text-display .word.selecting-Co { background: rgba(230,57,70,0.3); border-bottom-color: var(--condition); }
+.text-display .word.selecting-Cx { background: rgba(42,157,143,0.3); border-bottom-color: var(--context); }
+.text-display .word.selecting-Pop { background: rgba(233,196,106,0.3); border-bottom-color: var(--population); }
+.text-display.dragging { cursor: crosshair; }
+.text-display.dragging .word { cursor: crosshair; }
+.text-display.review-mode .word { cursor: default; }
+
+/* Comparison overlay styles on words */
+.text-display .word.cmp-correct {
+  outline: 2px solid var(--correct); outline-offset: 2px; border-radius: 5px;
+}
+.text-display .word.cmp-wrong-cat {
+  outline: 2px dashed #f97316; outline-offset: 2px; border-radius: 5px;
+}
+.text-display .word.cmp-missed {
+  background: transparent !important; color: var(--text-primary) !important;
+  box-shadow: none !important; font-weight: 400 !important;
+  border-bottom: 3px dashed var(--missed) !important;
+  padding: 0.12em 0.04em !important; margin: 0 !important;
+}
+.text-display .word.cmp-extra {
+  outline: 2px solid var(--wrong); outline-offset: 2px; border-radius: 5px;
+  text-decoration: line-through; text-decoration-color: var(--wrong);
+}
+
+/* Comparison: gabarito underlay */
+.text-display .word .gab-underlay {
+  position: absolute; bottom: -4px; left: 0; right: 0; height: 3px;
+  border-radius: 2px;
+}
+
+/* Action bar */
+.action-bar {
+  padding: 1rem 1.5rem; background: var(--bg-tertiary);
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 0.75rem;
+}
+.action-bar-info { font-size: 0.82rem; color: var(--text-muted); }
+
+/* Comparison feedback panel */
+.feedback-panel {
+  margin-top: 2rem; background: var(--bg-secondary);
+  border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+  animation: slideDown 0.35s ease;
+}
+.feedback-header {
+  padding: 1rem 1.5rem; background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.feedback-header h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.05rem; font-weight: 700;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.feedback-body { padding: 1.5rem; }
+.feedback-score {
+  display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1.2rem;
+}
+.score-card {
+  flex: 1; min-width: 140px; padding: 1rem;
+  background: var(--bg-primary); border: 1px solid var(--border);
+  border-radius: 10px; text-align: center;
+}
+.score-card .score-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem; font-weight: 900;
+}
+.score-card .score-label {
+  font-size: 0.72rem; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.1em;
+  margin-top: 0.3rem;
+}
+.comparison-legend {
+  display: flex; gap: 1.2rem; flex-wrap: wrap;
+  padding: 0.8rem 1rem; background: var(--bg-primary);
+  border-radius: 8px; margin-bottom: 1rem;
+}
+.cmp-legend-item {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.78rem; color: var(--text-secondary);
+}
+.cmp-legend-swatch {
+  width: 16px; height: 10px; border-radius: 3px;
+}
+
+/* Summary */
+.summary-section { margin-top: 2rem; }
+.summary-table {
+  width: 100%; background: var(--bg-secondary);
+  border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+}
+.summary-table table { width: 100%; border-collapse: collapse; }
+.summary-table th {
+  background: var(--bg-tertiary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--text-secondary); padding: 0.9rem 1.25rem;
+  text-align: left; border-bottom: 1px solid var(--border);
+}
+.summary-table td {
+  padding: 0.8rem 1.25rem; border-bottom: 1px solid var(--border); font-size: 0.92rem;
+}
+.summary-table tr:last-child td { border-bottom: none; }
+.cat-label {
+  font-weight: 700; font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem; display: inline-flex; align-items: center; gap: 0.45rem;
+}
+.cat-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.words-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.word-tag {
+  font-size: 0.8rem; padding: 0.22rem 0.6rem;
+  border-radius: 5px; font-weight: 500;
+}
+.tag-Co { background: var(--condition-bg); color: var(--condition); border: 1px solid var(--condition-border); }
+.tag-Cx { background: var(--context-bg); color: var(--context); border: 1px solid var(--context-border); }
+.tag-Pop { background: var(--population-bg); color: var(--population); border: 1px solid var(--population-border); }
+
+/* Empty & Loading */
+.empty-state { text-align: center; padding: 5rem 2rem; color: var(--text-muted); }
+.empty-state .icon { font-size: 3.5rem; margin-bottom: 1rem; opacity: 0.4; }
+.empty-state p { font-size: 1rem; line-height: 1.7; }
+.loading-spinner {
+  display: inline-block; width: 20px; height: 20px;
+  border: 2px solid var(--border); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.toast {
+  position: fixed; bottom: 2rem; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 0.8rem 1.5rem;
+  font-size: 0.85rem; color: var(--text-primary);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  opacity: 0; transition: all 0.3s ease; z-index: 200; white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .main-container { padding: 1rem; }
+  .text-display { padding: 1.5rem; font-size: 1.25rem; line-height: 2.3; }
+  header { padding: 1rem; }
+  .logo h1 { font-size: 1.4rem; }
+  .legend { gap: 0.8rem; padding: 0.9rem; }
+  .class-tools { gap: 0.3rem; }
+  .tool-btn { padding: 0.4rem 0.7rem; font-size: 0.68rem; }
+  .tool-btn .key-hint { display: none; }
+  .case-item-preview { display: none; }
+  .feedback-score { gap: 0.8rem; }
+  .score-card { min-width: 100px; padding: 0.7rem; }
+  .score-card .score-value { font-size: 1.5rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<header>
+  <div class="logo">
+    <h1>CoCoPop</h1>
+    <span>Casos Clínicos</span>
+  </div>
+  <div class="header-right">
+    <span class="mode-badge" id="modeBadge">ALUNO</span>
+    <button class="btn btn-icon" onclick="toggleAdmin()" title="Configurações">⚙️</button>
+  </div>
+</header>
+
+<div class="main-container">
+
+  <!-- ADMIN / CONFIG PANEL -->
+  <div class="admin-panel hidden" id="adminPanel">
+    <div class="admin-top">
+      <h2>⚙️ Configuração do Gist</h2>
+      <button class="btn btn-sm" onclick="hideAdmin()">✕ Fechar</button>
+    </div>
+    <div class="admin-body">
+      <div class="gist-config">
+        <div class="form-group" style="margin-bottom:0.8rem;">
+          <label>URL do Gist (JSON com gabarito)</label>
+          <div class="gist-config-row">
+            <input type="text" id="gistUrlInput" placeholder="https://gist.github.com/usuario/id_do_gist">
+            <button class="btn btn-primary" onclick="loadFromGist()">🔄 Carregar</button>
+          </div>
+          <div class="gist-status" id="gistStatus">Gist padrão será utilizado caso nenhum seja informado.</div>
+        </div>
+      </div>
+
+      <!-- Manual case management (professor only) -->
+      <details style="margin-top:1rem;">
+        <summary style="cursor:pointer;color:var(--text-secondary);font-size:0.85rem;font-weight:600;">
+          📋 Gerenciar Casos Manualmente (Professor)
+        </summary>
+        <div style="padding-top:1rem;">
+          <div style="margin-bottom:1.2rem;">
+            <div class="cases-list-title">Casos Carregados</div>
+            <div id="casesList"></div>
+          </div>
+          <div class="form-group">
+            <label>Título do Caso</label>
+            <input type="text" id="inputTitle" placeholder="Ex.: Hipertensão Gestacional em Atenção Primária">
+          </div>
+          <div class="form-group">
+            <label>Parágrafo de Contextualização</label>
+            <textarea id="inputText" placeholder="Cole aqui o parágrafo do caso clínico..."></textarea>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="saveCase()">💾 Salvar Caso</button>
+            <button class="btn" onclick="newCase()">+ Novo Caso</button>
+            <span style="border-left:1px solid var(--border);height:24px;margin:0 0.3rem;"></span>
+            <button class="btn" onclick="exportJSON()">📥 Exportar JSON</button>
+            <button class="btn" onclick="document.getElementById('importFile').click()">📤 Importar JSON</button>
+            <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(event)">
+          </div>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <span class="legend-title">CoCoPop</span>
+    <div class="legend-item"><span class="legend-swatch swatch-co"></span><span class="legend-code" style="color:var(--condition)">Co</span><span>Condition (Condição)</span></div>
+    <div class="legend-item"><span class="legend-swatch swatch-cx"></span><span class="legend-code" style="color:var(--context)">Cx</span><span>Context (Contexto)</span></div>
+    <div class="legend-item"><span class="legend-swatch swatch-pop"></span><span class="legend-code" style="color:var(--population)">Pop</span><span>Population (População)</span></div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-bar-wrap" id="progressWrap" style="display:none;">
+    <div class="progress-header">
+      <span class="progress-label">Progresso</span>
+      <span class="progress-count" id="progressCount">0 / 0</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-dots" id="progressDots"></div>
+  </div>
+
+  <!-- CLASSIFICATION AREA -->
+  <div class="classification-area">
+    <div class="class-header">
+      <div class="class-header-left">
+        <h2 id="displayTitle">Carregando casos…</h2>
+        <div class="subtitle" id="displaySubtitle">Aguarde o carregamento dos casos do Gist</div>
+      </div>
+      <div class="class-tools" id="classTools" style="display:none;">
+        <button class="tool-btn" data-cat="Co" onclick="selectTool('Co')">Condition <span class="key-hint">1</span></button>
+        <button class="tool-btn" data-cat="Cx" onclick="selectTool('Cx')">Context <span class="key-hint">2</span></button>
+        <button class="tool-btn" data-cat="Pop" onclick="selectTool('Pop')">Population <span class="key-hint">3</span></button>
+        <button class="tool-btn" data-cat="clear" onclick="selectTool('clear')">Borracha <span class="key-hint">0</span></button>
+        <button class="tool-btn" data-cat="reset" onclick="resetAll()">⟲ Reset</button>
+      </div>
+    </div>
+    <div class="text-display" id="textDisplay">
+      <div class="empty-state">
+        <div class="icon"><span class="loading-spinner"></span></div>
+        <p>Carregando casos clínicos do Gist…</p>
+      </div>
+    </div>
+    <!-- Action bar for submitting / navigating -->
+    <div class="action-bar" id="actionBar" style="display:none;">
+      <div class="action-bar-info" id="actionInfo">Classifique as palavras e clique em Conferir</div>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <button class="btn" id="btnPrev" onclick="goCase(-1)" disabled>← Anterior</button>
+        <button class="btn btn-success" id="btnSubmit" onclick="submitAnswer()">✓ Conferir Gabarito</button>
+        <button class="btn btn-primary" id="btnNext" onclick="goCase(1)" style="display:none;">Próximo Caso →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEEDBACK / COMPARISON PANEL -->
+  <div class="feedback-panel" id="feedbackPanel" style="display:none;">
+    <div class="feedback-header">
+      <h3>📊 Comparação com o Gabarito</h3>
+    </div>
+    <div class="feedback-body">
+      <div class="feedback-score" id="feedbackScore"></div>
+      <div class="comparison-legend">
+        <div class="cmp-legend-item"><span class="cmp-legend-swatch" style="background:var(--correct);"></span> Acerto (mesma categoria)</div>
+        <div class="cmp-legend-item"><span class="cmp-legend-swatch" style="background:#f97316;"></span> Categoria diferente</div>
+        <div class="cmp-legend-item"><span class="cmp-legend-swatch" style="background:var(--missed);border:1px dashed var(--missed);"></span> Não marcado (gabarito esperava)</div>
+        <div class="cmp-legend-item"><span class="cmp-legend-swatch" style="background:var(--wrong);"></span> Marcação extra (não no gabarito)</div>
+      </div>
+      <div id="feedbackDetails"></div>
+    </div>
+  </div>
+
+  <!-- SUMMARY TABLE -->
+  <div class="summary-section" id="summarySection" style="display:none;">
+    <div class="summary-table">
+      <table>
+        <thead><tr><th style="width:170px;">Componente</th><th>Termos (Aluno)</th><th>Termos (Gabarito)</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="cat-label"><span class="cat-dot" style="background:var(--condition)"></span> Condition</span></td>
+            <td><div class="words-list" id="sCo"></div></td>
+            <td><div class="words-list" id="gCo"></div></td>
+          </tr>
+          <tr>
+            <td><span class="cat-label"><span class="cat-dot" style="background:var(--context)"></span> Context</span></td>
+            <td><div class="words-list" id="sCx"></div></td>
+            <td><div class="words-list" id="gCx"></div></td>
+          </tr>
+          <tr>
+            <td><span class="cat-label"><span class="cat-dot" style="background:var(--population)"></span> Population</span></td>
+            <td><div class="words-list" id="sPop"></div></td>
+            <td><div class="words-list" id="gPop"></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── State ───
+const DEFAULT_GIST = 'https://gist.github.com/Harison-PUCMG/872dde374545f17cf33a9b9899a1b5b0';
+let cases = [];           // {id, title, text, classifications:{wordIdx: cat}}
+let currentIdx = -1;
+let words = [];           // {text, cat(student), id}
+let activeTool = null;
+let isDragging = false, dragStart = null, dragEnd = null;
+let caseStates = {};      // caseId -> {studentMap:{}, submitted:bool}
+let editingCaseId = null;
+
+// ─── Storage ───
+function loadLocal(k, def) { try { return JSON.parse(localStorage.getItem(k)); } catch { return def; } }
+function saveLocal(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+
+function getCaseState(id) {
+  if (!caseStates[id]) caseStates[id] = { studentMap: {}, submitted: false };
+  return caseStates[id];
+}
+function persistStates() { saveLocal('cocopop_states', caseStates); }
+function restoreStates() { caseStates = loadLocal('cocopop_states', {}) || {}; }
+
+// ─── Gist loading ───
+function getStoredGistUrl() { return localStorage.getItem('cocopop_gist_url') || ''; }
+function setStoredGistUrl(u) { localStorage.setItem('cocopop_gist_url', u); }
+
+function gistToRawUrl(url) {
+  // Accept various gist formats and convert to raw JSON
+  url = url.trim();
+  // Already raw
+  if (url.includes('gist.githubusercontent.com') && url.includes('/raw')) return url;
+  // Extract gist ID from various formats
+  let match = url.match(/gist\.github\.com\/[\w-]+\/([a-f0-9]+)/);
+  if (!match) match = url.match(/([a-f0-9]{20,})/);
+  if (match) {
+    const gistId = match[1];
+    // Use the Gist API to get raw content
+    return `https://api.github.com/gists/${gistId}`;
+  }
+  return url;
+}
+
+async function fetchGist(url) {
+  const statusEl = document.getElementById('gistStatus');
+  statusEl.className = 'gist-status';
+  statusEl.textContent = 'Carregando…';
+
+  try {
+    const apiUrl = gistToRawUrl(url);
+    let data;
+
+    if (apiUrl.includes('api.github.com/gists/')) {
+      // Fetch via GitHub API
+      const resp = await fetch(apiUrl);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const gist = await resp.json();
+      // Find JSON file in gist
+      const files = Object.values(gist.files);
+      const jsonFile = files.find(f => f.filename.endsWith('.json')) || files[0];
+      if (!jsonFile) throw new Error('Nenhum arquivo encontrado no Gist');
+      data = JSON.parse(jsonFile.content);
+    } else {
+      const resp = await fetch(apiUrl);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      data = await resp.json();
+    }
+
+    if (!data.cases || !Array.isArray(data.cases)) throw new Error('Formato inválido: campo "cases" ausente');
+
+    // Load cases with answer key
+    cases = data.cases.map(c => ({
+      id: c.id || 'c' + Math.random().toString(36).substr(2,9),
+      title: c.title,
+      text: c.text,
+      classifications: c.classifications || {}
+    }));
+
+    statusEl.className = 'gist-status ok';
+    statusEl.textContent = `✓ ${cases.length} caso(s) carregado(s) com sucesso`;
+    setStoredGistUrl(url);
+
+    initAfterLoad();
+    return true;
+  } catch (err) {
+    statusEl.className = 'gist-status err';
+    statusEl.textContent = `Erro: ${err.message}`;
+    return false;
+  }
+}
+
+async function loadFromGist() {
+  const input = document.getElementById('gistUrlInput').value.trim();
+  const url = input || DEFAULT_GIST;
+  document.getElementById('gistUrlInput').value = url;
+  await fetchGist(url);
+}
+
+// ─── Initialization ───
+function initAfterLoad() {
+  restoreStates();
+  renderProgress();
+  if (cases.length) {
+    // Find first unsubmitted, or first
+    const firstUnsub = cases.findIndex(c => !getCaseState(c.id).submitted);
+    activateCase(firstUnsub >= 0 ? firstUnsub : 0);
+  }
+  document.getElementById('classTools').style.display = 'flex';
+  document.getElementById('actionBar').style.display = 'flex';
+  document.getElementById('progressWrap').style.display = 'block';
+}
+
+// ─── Case activation ───
+function activateCase(idx) {
+  if (idx < 0 || idx >= cases.length) return;
+  currentIdx = idx;
+  const c = cases[idx];
+  const state = getCaseState(c.id);
+
+  document.getElementById('displayTitle').textContent = `Caso ${idx+1}: ${c.title}`;
+
+  tokenize(c.text);
+
+  // Restore student's previous annotations
+  words.forEach(w => {
+    if (state.studentMap[w.id] !== undefined) w.cat = state.studentMap[w.id];
+  });
+
+  if (state.submitted) {
+    renderReviewMode();
+  } else {
+    document.getElementById('displaySubtitle').textContent = 'Selecione a categoria e arraste sobre as palavras para classificar';
+    renderText();
+    showEditControls(true);
+    document.getElementById('feedbackPanel').style.display = 'none';
+    document.getElementById('btnSubmit').style.display = '';
+    document.getElementById('btnSubmit').disabled = false;
+    document.getElementById('btnNext').style.display = 'none';
+    document.getElementById('actionInfo').textContent = 'Classifique as palavras e clique em Conferir';
+  }
+
+  renderSummary();
+  renderProgress();
+  updateNavButtons();
+}
+
+function tokenize(text) {
+  words = [];
+  (text.match(/\S+/g) || []).forEach((t, i) => words.push({ text: t, cat: null, id: i }));
+}
+
+// ─── Rendering ───
+function renderText() {
+  const el = document.getElementById('textDisplay');
+  el.classList.remove('review-mode');
+  if (!words.length) { renderEmpty(); return; }
+  el.innerHTML = words.map(w => {
+    const cls = w.cat ? `cat-${w.cat}` : '';
+    return `<span class="word ${cls}" data-id="${w.id}">${esc(w.text)}</span> `;
+  }).join('');
+}
+
+function renderReviewMode() {
+  const c = cases[currentIdx];
+  const gab = c.classifications || {};
+  const state = getCaseState(c.id);
+
+  document.getElementById('displaySubtitle').textContent = 'Revisão — comparando sua classificação com o gabarito';
+  showEditControls(false);
+  document.getElementById('btnSubmit').style.display = 'none';
+  document.getElementById('btnNext').style.display = '';
+
+  const isLast = currentIdx >= cases.length - 1;
+  document.getElementById('btnNext').disabled = isLast;
+  document.getElementById('btnNext').textContent = isLast ? 'Último caso ✓' : 'Próximo Caso →';
+  document.getElementById('actionInfo').textContent = 'Revise os resultados abaixo';
+
+  // Render words with comparison classes
+  const el = document.getElementById('textDisplay');
+  el.classList.add('review-mode');
+  el.innerHTML = words.map(w => {
+    const stu = state.studentMap[w.id] || null;
+    const ans = gab[w.id] || null;
+    let cls = stu ? `cat-${stu}` : '';
+    let cmpCls = '';
+
+    if (stu && ans && stu === ans) {
+      cmpCls = 'cmp-correct';       // exact match
+    } else if (stu && ans && stu !== ans) {
+      cmpCls = 'cmp-wrong-cat';     // both tagged but different cat
+    } else if (!stu && ans) {
+      cmpCls = 'cmp-missed';        // student missed, gabarito expected
+    } else if (stu && !ans) {
+      cmpCls = 'cmp-extra';         // student tagged, gabarito didn't
+    }
+
+    return `<span class="word ${cls} ${cmpCls}" data-id="${w.id}">${esc(w.text)}</span> `;
+  }).join('');
+
+  // Show feedback
+  showFeedback(gab, state.studentMap);
+  renderSummaryComparison(gab);
+}
+
+function showEditControls(show) {
+  document.querySelectorAll('.tool-btn').forEach(b => b.style.display = show ? '' : 'none');
+  // Keep tools area visible but contents hidden
+}
+
+function renderEmpty() {
+  document.getElementById('textDisplay').innerHTML = `
+    <div class="empty-state">
+      <div class="icon">📖</div>
+      <p>Nenhum caso carregado.<br>Configure o Gist no painel de configurações.</p>
+    </div>`;
+}
+
+function showFeedback(gab, stuMap) {
+  const panel = document.getElementById('feedbackPanel');
+  panel.style.display = 'block';
+
+  // Compute scores
+  const gabWords = new Set(Object.keys(gab).map(Number));
+  const stuWords = new Set(Object.keys(stuMap).filter(k => stuMap[k]).map(Number));
+
+  let correct = 0, wrongCat = 0, missed = 0, extra = 0;
+  gabWords.forEach(id => {
+    if (stuMap[id] === gab[id]) correct++;
+    else if (stuMap[id] && stuMap[id] !== gab[id]) wrongCat++;
+    else missed++;
+  });
+  stuWords.forEach(id => {
+    if (!gab[id]) extra++;
+  });
+  const total = gabWords.size;
+  const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+  document.getElementById('feedbackScore').innerHTML = `
+    <div class="score-card"><div class="score-value" style="color:var(--correct)">${pct}%</div><div class="score-label">Acertos Exatos</div></div>
+    <div class="score-card"><div class="score-value" style="color:var(--correct)">${correct}</div><div class="score-label">Corretos</div></div>
+    <div class="score-card"><div class="score-value" style="color:#f97316">${wrongCat}</div><div class="score-label">Categoria Diferente</div></div>
+    <div class="score-card"><div class="score-value" style="color:var(--missed)">${missed}</div><div class="score-label">Não Identificados</div></div>
+    <div class="score-card"><div class="score-value" style="color:var(--wrong)">${extra}</div><div class="score-label">Marcações Extras</div></div>
+  `;
+}
+
+function renderSummary() {
+  const cats = { Co: [], Cx: [], Pop: [] };
+  let i = 0;
+  while (i < words.length) {
+    const w = words[i];
+    if (w.cat && cats[w.cat]) {
+      let phrase = [w.text]; let j = i + 1;
+      while (j < words.length && words[j].cat === w.cat) { phrase.push(words[j].text); j++; }
+      cats[w.cat].push(phrase.join(' ')); i = j;
+    } else { i++; }
+  }
+  const any = Object.values(cats).some(a => a.length);
+  document.getElementById('summarySection').style.display = any ? 'block' : 'none';
+  ['Co','Cx','Pop'].forEach(c => {
+    document.getElementById('s'+c).innerHTML = cats[c].length
+      ? cats[c].map(t => `<span class="word-tag tag-${c}">${esc(t)}</span>`).join('')
+      : '<span style="color:var(--text-muted);font-size:0.82rem;">—</span>';
+  });
+}
+
+function renderSummaryComparison(gab) {
+  // Also show gabarito terms
+  const c = cases[currentIdx];
+  const gabWords = [];
+  (c.text.match(/\S+/g) || []).forEach((t, i) => gabWords.push({ text: t, cat: gab[i] || null, id: i }));
+
+  const cats = { Co: [], Cx: [], Pop: [] };
+  let i = 0;
+  while (i < gabWords.length) {
+    const w = gabWords[i];
+    if (w.cat && cats[w.cat]) {
+      let phrase = [w.text]; let j = i + 1;
+      while (j < gabWords.length && gabWords[j].cat === w.cat) { phrase.push(gabWords[j].text); j++; }
+      cats[w.cat].push(phrase.join(' ')); i = j;
+    } else { i++; }
+  }
+  ['Co','Cx','Pop'].forEach(c => {
+    document.getElementById('g'+c).innerHTML = cats[c].length
+      ? cats[c].map(t => `<span class="word-tag tag-${c}">${esc(t)}</span>`).join('')
+      : '<span style="color:var(--text-muted);font-size:0.82rem;">—</span>';
+  });
+
+  document.getElementById('summarySection').style.display = 'block';
+}
+
+// ─── Progress ───
+function renderProgress() {
+  if (!cases.length) { document.getElementById('progressWrap').style.display = 'none'; return; }
+  document.getElementById('progressWrap').style.display = 'block';
+
+  const submitted = cases.filter(c => getCaseState(c.id).submitted).length;
+  document.getElementById('progressCount').textContent = `${submitted} / ${cases.length}`;
+  document.getElementById('progressFill').style.width = `${(submitted / cases.length) * 100}%`;
+
+  document.getElementById('progressDots').innerHTML = cases.map((c, i) => {
+    const st = getCaseState(c.id);
+    let cls = '';
+    if (i === currentIdx) cls = 'current';
+    if (st.submitted) cls = 'reviewed';
+    else if (Object.keys(st.studentMap).length) cls = 'done';
+    return `<div class="progress-dot ${cls}" onclick="activateCase(${i})" title="${esc(c.title)}">${i+1}</div>`;
+  }).join('');
+}
+
+function updateNavButtons() {
+  document.getElementById('btnPrev').disabled = currentIdx <= 0;
+}
+
+// ─── Actions ───
+function submitAnswer() {
+  if (currentIdx < 0) return;
+  const c = cases[currentIdx];
+  const state = getCaseState(c.id);
+
+  // Save student map
+  const m = {};
+  words.forEach(w => { if (w.cat) m[w.id] = w.cat; });
+  state.studentMap = m;
+  state.submitted = true;
+  persistStates();
+
+  renderReviewMode();
+  renderProgress();
+  toast('Gabarito revelado — compare sua classificação ✓');
+}
+
+function goCase(dir) {
+  const next = currentIdx + dir;
+  if (next >= 0 && next < cases.length) activateCase(next);
+}
+
+function resetAll() {
+  if (!words.length) return;
+  if (!confirm('Limpar todas as classificações deste caso?')) return;
+  words.forEach(w => w.cat = null);
+  const c = cases[currentIdx];
+  const state = getCaseState(c.id);
+  state.studentMap = {};
+  state.submitted = false;
+  persistStates();
+  renderText();
+  renderSummary();
+  renderProgress();
+  document.getElementById('feedbackPanel').style.display = 'none';
+  document.getElementById('btnSubmit').style.display = '';
+  document.getElementById('btnSubmit').disabled = false;
+  document.getElementById('btnNext').style.display = 'none';
+  showEditControls(true);
+  document.getElementById('displaySubtitle').textContent = 'Selecione a categoria e arraste sobre as palavras para classificar';
+  document.getElementById('actionInfo').textContent = 'Classifique as palavras e clique em Conferir';
+  toast('Classificações resetadas');
+}
+
+// ─── Tools ───
+function selectTool(cat) {
+  activeTool = cat;
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
+}
+
+// ─── Drag select ───
+function getWordIdFromEvent(e) {
+  const el = e.target.closest('.word[data-id]');
+  return el ? parseInt(el.dataset.id) : null;
+}
+function updateDragHighlight() {
+  if (dragStart === null) return;
+  const from = Math.min(dragStart, dragEnd ?? dragStart);
+  const to = Math.max(dragStart, dragEnd ?? dragStart);
+  const catClass = activeTool && activeTool !== 'clear' ? `selecting-${activeTool}` : '';
+  document.querySelectorAll('#textDisplay .word').forEach(el => {
+    const wid = parseInt(el.dataset.id);
+    el.classList.remove('selecting','selecting-Co','selecting-Cx','selecting-Pop');
+    if (wid >= from && wid <= to) { el.classList.add('selecting'); if (catClass) el.classList.add(catClass); }
+  });
+}
+function applyDragSelection() {
+  if (dragStart === null) return;
+  const from = Math.min(dragStart, dragEnd ?? dragStart);
+  const to = Math.max(dragStart, dragEnd ?? dragStart);
+  for (let i = from; i <= to; i++) {
+    words[i].cat = activeTool === 'clear' ? null : activeTool;
+  }
+  renderText(); renderSummary(); autoSave();
+}
+function autoSave() {
+  if (currentIdx < 0) return;
+  const c = cases[currentIdx];
+  const state = getCaseState(c.id);
+  const m = {};
+  words.forEach(w => { if (w.cat) m[w.id] = w.cat; });
+  state.studentMap = m;
+  persistStates();
+}
+
+function initDragSelect() {
+  const display = document.getElementById('textDisplay');
+
+  display.addEventListener('mousedown', e => {
+    if (display.classList.contains('review-mode')) return;
+    const id = getWordIdFromEvent(e);
+    if (id === null || !words.length) return;
+    if (!activeTool) { toast('Selecione uma categoria: Condition, Context ou Population'); return; }
+    e.preventDefault();
+    isDragging = true; dragStart = id; dragEnd = id;
+    display.classList.add('dragging');
+    updateDragHighlight();
+  });
+  display.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    const id = getWordIdFromEvent(e);
+    if (id !== null && id !== dragEnd) { dragEnd = id; updateDragHighlight(); }
+  });
+  const finishDrag = () => {
+    if (!isDragging) return;
+    isDragging = false;
+    document.getElementById('textDisplay').classList.remove('dragging');
+    applyDragSelection();
+    dragStart = null; dragEnd = null;
+  };
+  display.addEventListener('mouseup', finishDrag);
+  document.addEventListener('mouseup', () => { if (isDragging) finishDrag(); });
+
+  // Touch
+  display.addEventListener('touchstart', e => {
+    if (display.classList.contains('review-mode')) return;
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const wordEl = el?.closest('.word[data-id]');
+    if (!wordEl || !words.length) return;
+    if (!activeTool) { toast('Selecione uma categoria'); return; }
+    e.preventDefault();
+    isDragging = true; dragStart = parseInt(wordEl.dataset.id); dragEnd = dragStart;
+    display.classList.add('dragging');
+    updateDragHighlight();
+  }, { passive: false });
+  display.addEventListener('touchmove', e => {
+    if (!isDragging) return; e.preventDefault();
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const wordEl = el?.closest('.word[data-id]');
+    if (wordEl) { const id = parseInt(wordEl.dataset.id); if (id !== dragEnd) { dragEnd = id; updateDragHighlight(); } }
+  }, { passive: false });
+  display.addEventListener('touchend', e => { if (isDragging) { e.preventDefault(); finishDrag(); } });
+}
+
+// ─── Admin CRUD (professor) ───
+function toggleAdmin() {
+  const panel = document.getElementById('adminPanel');
+  if (panel.classList.contains('hidden')) {
+    panel.classList.remove('hidden');
+    document.getElementById('modeBadge').textContent = 'EDIÇÃO';
+    document.getElementById('modeBadge').classList.add('editing');
+    document.getElementById('gistUrlInput').value = getStoredGistUrl() || DEFAULT_GIST;
+    renderCasesList();
+  } else {
+    hideAdmin();
+  }
+}
+function hideAdmin() {
+  document.getElementById('adminPanel').classList.add('hidden');
+  document.getElementById('modeBadge').textContent = 'ALUNO';
+  document.getElementById('modeBadge').classList.remove('editing');
+}
+
+function saveCase() {
+  const title = document.getElementById('inputTitle').value.trim();
+  const text = document.getElementById('inputText').value.trim();
+  if (!title || !text) { toast('Preencha título e parágrafo'); return; }
+  const id = editingCaseId || ('c' + Date.now());
+  const obj = { id, title, text, classifications: {} };
+  const idx = cases.findIndex(c => c.id === id);
+  if (idx >= 0) { obj.classifications = cases[idx].classifications; cases[idx] = obj; }
+  else cases.unshift(obj);
+  editingCaseId = id;
+  renderCasesList();
+  activateCase(cases.findIndex(c => c.id === id));
+  toast('Caso salvo ✓');
+}
+function deleteCase(id) {
+  if (!confirm('Excluir este caso?')) return;
+  cases = cases.filter(c => c.id !== id);
+  delete caseStates[id]; persistStates();
+  if (cases[currentIdx]?.id === id || currentIdx >= cases.length) {
+    currentIdx = Math.max(0, cases.length - 1);
+    if (cases.length) activateCase(currentIdx);
+    else { renderEmpty(); document.getElementById('summarySection').style.display='none'; }
+  }
+  renderCasesList(); renderProgress();
+  toast('Caso excluído');
+}
+function editCaseInForm(id) {
+  const c = cases.find(c => c.id === id);
+  if (!c) return;
+  editingCaseId = id;
+  document.getElementById('inputTitle').value = c.title;
+  document.getElementById('inputText').value = c.text;
+}
+function newCase() {
+  editingCaseId = null;
+  document.getElementById('inputTitle').value = '';
+  document.getElementById('inputText').value = '';
+}
+function renderCasesList() {
+  const el = document.getElementById('casesList');
+  if (!cases.length) { el.innerHTML = '<p style="color:var(--text-muted);font-size:0.82rem;">Nenhum caso.</p>'; return; }
+  el.innerHTML = cases.map((c, i) => {
+    const preview = c.text.substring(0,60) + (c.text.length > 60 ? '…' : '');
+    return `<div class="case-item ${i === currentIdx ? 'active' : ''}" onclick="activateCase(${i})">
+      <span class="case-item-title">${esc(c.title)}</span>
+      <span class="case-item-preview">${esc(preview)}</span>
+      <div class="case-item-actions">
+        <button class="btn btn-sm" onclick="event.stopPropagation();editCaseInForm('${c.id}')" title="Editar">✏️</button>
+        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteCase('${c.id}')" title="Excluir">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Export / Import ───
+function exportJSON() {
+  const exportData = {
+    exportedAt: new Date().toISOString(), version: 'cocopop-1.0',
+    cases: cases.map(c => ({ id: c.id, title: c.title, text: c.text, classifications: c.classifications }))
+  };
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `cocopop_${new Date().toISOString().slice(0,10)}.json`; a.click();
+  toast('JSON exportado ✓');
+}
+function importJSON(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.cases) { toast('JSON inválido'); return; }
+      cases = data.cases.map(c => ({ id: c.id, title: c.title, text: c.text, classifications: c.classifications || {} }));
+      initAfterLoad();
+      toast(`${cases.length} caso(s) importado(s) ✓`);
+    } catch (err) { toast('Erro: ' + err.message); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ─── Keyboard ───
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { selectTool(null); document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active')); }
+  if (!e.target.matches('input,textarea,select')) {
+    if (e.key === '1') selectTool('Co');
+    if (e.key === '2') selectTool('Cx');
+    if (e.key === '3') selectTool('Pop');
+    if (e.key === '0') selectTool('clear');
+    if (e.key === 'Enter' && !getCaseState(cases[currentIdx]?.id)?.submitted) submitAnswer();
+  }
+});
+
+// ─── Utils ───
+function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ─── Boot ───
+document.addEventListener('DOMContentLoaded', async () => {
+  initDragSelect();
+  restoreStates();
+
+  // Check URL param for gist override
+  const params = new URLSearchParams(window.location.search);
+  const gistParam = params.get('gist');
+
+  const url = gistParam || getStoredGistUrl() || DEFAULT_GIST;
+  document.getElementById('gistUrlInput').value = url;
+
+  const ok = await fetchGist(url);
+  if (!ok && url !== DEFAULT_GIST) {
+    // Fallback to default
+    toast('Tentando gist padrão…');
+    await fetchGist(DEFAULT_GIST);
+  }
+});
+</script>
+</body>
+</html>
