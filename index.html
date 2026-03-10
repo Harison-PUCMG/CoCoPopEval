@@ -451,6 +451,136 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
 }
 .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
+/* Final Report Overlay */
+.final-report-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+  display: flex; align-items: flex-start; justify-content: center;
+  overflow-y: auto; padding: 2rem 1rem;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+.final-report {
+  width: 100%; max-width: 960px;
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  border-radius: 20px; overflow: hidden;
+  animation: slideUp 0.4s ease;
+  margin-bottom: 2rem;
+}
+@keyframes slideUp { from { opacity:0; transform:translateY(40px); } to { opacity:1; transform:translateY(0); } }
+
+.report-cover {
+  padding: 2.5rem 2.5rem 2rem;
+  background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary));
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+.report-cover .report-icon { font-size: 3rem; margin-bottom: 0.6rem; }
+.report-cover h2 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900; font-size: 1.8rem;
+  background: linear-gradient(135deg, var(--condition), var(--context), var(--population));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  margin-bottom: 0.3rem;
+}
+.report-cover .report-sub {
+  font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;
+}
+
+.report-global-scores {
+  display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.report-global-scores .score-card {
+  min-width: 120px; flex: none;
+  background: var(--bg-primary); border: 1px solid var(--border);
+  border-radius: 12px; padding: 1rem 1.2rem; text-align: center;
+}
+.report-global-scores .score-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem; font-weight: 900;
+}
+.report-global-scores .score-label {
+  font-size: 0.7rem; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.1em; margin-top: 0.2rem;
+}
+
+.report-body { padding: 1.5rem 2rem 2rem; }
+
+.report-case {
+  background: var(--bg-primary); border: 1px solid var(--border);
+  border-radius: 14px; margin-bottom: 1.2rem; overflow: hidden;
+  transition: border-color 0.2s;
+}
+.report-case:hover { border-color: var(--text-muted); }
+
+.report-case-header {
+  padding: 1rem 1.3rem;
+  background: var(--bg-tertiary); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 0.5rem; cursor: pointer;
+}
+.report-case-header h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.95rem; font-weight: 700;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.report-case-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.1em;
+  background: var(--bg-primary); padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+.report-case-pct {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem; font-weight: 700; padding: 0.3rem 0.8rem;
+  border-radius: 6px;
+}
+.report-case-pct.good { background: var(--correct-bg); color: var(--correct); border: 1px solid var(--correct-border); }
+.report-case-pct.mid { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.4); }
+.report-case-pct.low { background: var(--wrong-bg); color: var(--wrong); border: 1px solid var(--wrong-border); }
+
+.report-case-body { padding: 1.1rem 1.3rem; }
+
+.report-text-block {
+  line-height: 2.2; font-size: 1rem; margin-bottom: 1rem;
+  padding: 0.8rem 1rem; background: var(--bg-secondary);
+  border-radius: 8px; border: 1px solid var(--border);
+}
+.report-text-block .rw {
+  display: inline; padding: 0.06em 0.02em; border-radius: 4px;
+}
+.report-text-block .rw.r-Co { background: var(--condition); color: #fff; padding: 0.04em 0.22em; border-radius: 4px; font-weight: 600; }
+.report-text-block .rw.r-Cx { background: var(--context); color: #fff; padding: 0.04em 0.22em; border-radius: 4px; font-weight: 600; }
+.report-text-block .rw.r-Pop { background: var(--population); color: #1a1a1a; padding: 0.04em 0.22em; border-radius: 4px; font-weight: 600; }
+.report-text-block .rw.r-correct { outline: 2px solid var(--correct); outline-offset: 1px; }
+.report-text-block .rw.r-wrong-cat { outline: 2px dashed #f97316; outline-offset: 1px; }
+.report-text-block .rw.r-missed { border-bottom: 2.5px dashed var(--missed); }
+.report-text-block .rw.r-extra { outline: 2px solid var(--wrong); outline-offset: 1px; text-decoration: line-through; text-decoration-color: var(--wrong); }
+
+.report-terms-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;
+}
+.report-terms-col h5 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--text-muted);
+  margin-bottom: 0.4rem; font-weight: 600;
+}
+
+.report-actions {
+  display: flex; gap: 0.75rem; justify-content: center;
+  padding-top: 0.5rem; flex-wrap: wrap;
+}
+
+.report-case-toggle {
+  font-size: 0.75rem; color: var(--text-muted); transition: transform 0.2s;
+}
+.report-case.collapsed .report-case-body { display: none; }
+.report-case.collapsed .report-case-toggle { transform: rotate(-90deg); }
+
 /* Responsive */
 @media (max-width: 768px) {
   .main-container { padding: 1rem; }
@@ -465,6 +595,14 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
   .feedback-score { gap: 0.8rem; }
   .score-card { min-width: 100px; padding: 0.7rem; }
   .score-card .score-value { font-size: 1.5rem; }
+  .final-report-overlay { padding: 1rem 0.5rem; }
+  .report-cover { padding: 1.5rem; }
+  .report-cover h2 { font-size: 1.4rem; }
+  .report-body { padding: 1rem; }
+  .report-case-body { padding: 0.8rem; }
+  .report-terms-grid { grid-template-columns: 1fr; }
+  .report-global-scores .score-card { min-width: 90px; padding: 0.7rem; }
+  .report-global-scores .score-value { font-size: 1.6rem; }
 }
 </style>
 </head>
@@ -579,7 +717,7 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
         <button class="btn" id="btnPrev" onclick="goCase(-1)" disabled>← Anterior</button>
         <button class="btn btn-success" id="btnSubmit" onclick="submitAnswer()">✓ Conferir Gabarito</button>
-        <button class="btn btn-primary" id="btnNext" onclick="goCase(1)" style="display:none;">Próximo Caso →</button>
+        <button class="btn btn-primary" id="btnNext" style="display:none;">Próximo Caso →</button>
       </div>
     </div>
   </div>
@@ -626,6 +764,9 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
       </table>
     </div>
   </div>
+
+  <!-- FINAL REPORT OVERLAY -->
+  <div class="final-report-overlay" id="finalReportOverlay" style="display:none;"></div>
 
 </div>
 
@@ -801,8 +942,27 @@ function renderReviewMode() {
   document.getElementById('btnNext').style.display = '';
 
   const isLast = currentIdx >= cases.length - 1;
-  document.getElementById('btnNext').disabled = isLast;
-  document.getElementById('btnNext').textContent = isLast ? 'Último caso ✓' : 'Próximo Caso →';
+  const allDone = cases.every(c => getCaseState(c.id).submitted);
+  if (allDone) {
+    document.getElementById('btnNext').textContent = '📊 Ver Relatório Final';
+    document.getElementById('btnNext').disabled = false;
+    document.getElementById('btnNext').onclick = showFinalReport;
+    document.getElementById('btnNext').className = 'btn btn-success';
+  } else if (isLast) {
+    // Not all done — find first unsubmitted
+    document.getElementById('btnNext').textContent = '→ Caso pendente';
+    document.getElementById('btnNext').disabled = false;
+    document.getElementById('btnNext').onclick = () => {
+      const nextUnsub = cases.findIndex(c => !getCaseState(c.id).submitted);
+      if (nextUnsub >= 0) activateCase(nextUnsub);
+    };
+    document.getElementById('btnNext').className = 'btn btn-primary';
+  } else {
+    document.getElementById('btnNext').textContent = 'Próximo Caso →';
+    document.getElementById('btnNext').disabled = false;
+    document.getElementById('btnNext').onclick = () => goCase(1);
+    document.getElementById('btnNext').className = 'btn btn-primary';
+  }
   document.getElementById('actionInfo').textContent = 'Revise os resultados abaixo';
 
   // Render words with comparison classes
@@ -957,7 +1117,13 @@ function submitAnswer() {
 
   renderReviewMode();
   renderProgress();
-  toast('Gabarito revelado — compare sua classificação ✓');
+
+  const allDone = cases.every(c => getCaseState(c.id).submitted);
+  if (allDone) {
+    toast('Todos os casos concluídos! Clique em "Ver Relatório Final"');
+  } else {
+    toast('Gabarito revelado — compare sua classificação ✓');
+  }
 }
 
 function goCase(dir) {
@@ -1179,9 +1345,193 @@ function importJSON(event) {
   event.target.value = '';
 }
 
+// ─── Final Report ───
+function computeCaseScore(caseObj) {
+  const gab = caseObj.classifications || {};
+  const state = getCaseState(caseObj.id);
+  const stuMap = state.studentMap || {};
+  const gabKeys = Object.keys(gab).map(Number);
+  const stuKeys = Object.keys(stuMap).filter(k => stuMap[k]).map(Number);
+  let correct = 0, wrongCat = 0, missed = 0, extra = 0;
+  gabKeys.forEach(id => {
+    if (stuMap[id] === gab[id]) correct++;
+    else if (stuMap[id] && stuMap[id] !== gab[id]) wrongCat++;
+    else missed++;
+  });
+  stuKeys.forEach(id => { if (!gab[id]) extra++; });
+  const total = gabKeys.length;
+  const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+  return { correct, wrongCat, missed, extra, total, pct };
+}
+
+function extractPhrases(text, classMap) {
+  const tokens = text.match(/\S+/g) || [];
+  const cats = { Co: [], Cx: [], Pop: [] };
+  let i = 0;
+  while (i < tokens.length) {
+    const cat = classMap[i];
+    if (cat && cats[cat]) {
+      let phrase = [tokens[i]]; let j = i + 1;
+      while (j < tokens.length && classMap[j] === cat) { phrase.push(tokens[j]); j++; }
+      cats[cat].push(phrase.join(' ')); i = j;
+    } else { i++; }
+  }
+  return cats;
+}
+
+function showFinalReport() {
+  const overlay = document.getElementById('finalReportOverlay');
+
+  // Global totals
+  let gCorrect = 0, gWrongCat = 0, gMissed = 0, gExtra = 0, gTotal = 0;
+  const caseScores = cases.map(c => {
+    const s = computeCaseScore(c);
+    gCorrect += s.correct; gWrongCat += s.wrongCat;
+    gMissed += s.missed; gExtra += s.extra; gTotal += s.total;
+    return s;
+  });
+  const globalPct = gTotal > 0 ? Math.round((gCorrect / gTotal) * 100) : 0;
+
+  // Build per-case HTML
+  let casesHtml = '';
+  cases.forEach((c, ci) => {
+    const s = caseScores[ci];
+    const state = getCaseState(c.id);
+    const gab = c.classifications || {};
+    const stuMap = state.studentMap || {};
+    const pctCls = s.pct >= 70 ? 'good' : s.pct >= 40 ? 'mid' : 'low';
+
+    // Build annotated text
+    const tokens = c.text.match(/\S+/g) || [];
+    const textHtml = tokens.map((t, i) => {
+      const stu = stuMap[i] || null;
+      const ans = gab[i] || null;
+      let cls = stu ? `r-${stu}` : '';
+      let cmpCls = '';
+      if (stu && ans && stu === ans) cmpCls = 'r-correct';
+      else if (stu && ans && stu !== ans) cmpCls = 'r-wrong-cat';
+      else if (!stu && ans) cmpCls = 'r-missed';
+      else if (stu && !ans) cmpCls = 'r-extra';
+      return `<span class="rw ${cls} ${cmpCls}">${esc(t)}</span>`;
+    }).join(' ');
+
+    // Extract phrases
+    const stuPhrases = extractPhrases(c.text, stuMap);
+    const gabPhrases = extractPhrases(c.text, gab);
+
+    const termsHtml = (phrases, prefix) => {
+      return ['Co','Cx','Pop'].map(cat => {
+        if (!phrases[cat].length) return '';
+        return phrases[cat].map(t => `<span class="word-tag tag-${cat}">${esc(t)}</span>`).join(' ');
+      }).filter(Boolean).join(' ') || '<span style="color:var(--text-muted);font-size:0.82rem;">—</span>';
+    };
+
+    casesHtml += `
+    <div class="report-case" onclick="this.classList.toggle('collapsed')">
+      <div class="report-case-header">
+        <h4><span class="report-case-num">Caso ${ci+1}</span> ${esc(c.title)}</h4>
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <span class="report-case-pct ${pctCls}">${s.pct}%</span>
+          <span class="report-case-toggle">▼</span>
+        </div>
+      </div>
+      <div class="report-case-body">
+        <div class="report-text-block">${textHtml}</div>
+        <div class="report-terms-grid">
+          <div class="report-terms-col">
+            <h5>🎯 Sua Classificação</h5>
+            <div class="words-list">${termsHtml(stuPhrases, 'stu')}</div>
+          </div>
+          <div class="report-terms-col">
+            <h5>✅ Gabarito do Professor</h5>
+            <div class="words-list">${termsHtml(gabPhrases, 'gab')}</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+
+  overlay.innerHTML = `
+  <div class="final-report">
+    <div class="report-cover">
+      <div class="report-icon">📊</div>
+      <h2>Relatório Final — CoCoPop</h2>
+      <div class="report-sub">Concluído em ${dateStr} · ${cases.length} caso(s) clínico(s)</div>
+      <div class="report-global-scores">
+        <div class="score-card"><div class="score-value" style="color:${globalPct >= 70 ? 'var(--correct)' : globalPct >= 40 ? '#fbbf24' : 'var(--wrong)'}">${globalPct}%</div><div class="score-label">Acerto Geral</div></div>
+        <div class="score-card"><div class="score-value" style="color:var(--correct)">${gCorrect}</div><div class="score-label">Corretos</div></div>
+        <div class="score-card"><div class="score-value" style="color:#f97316">${gWrongCat}</div><div class="score-label">Cat. Diferente</div></div>
+        <div class="score-card"><div class="score-value" style="color:var(--missed)">${gMissed}</div><div class="score-label">Não Identificados</div></div>
+        <div class="score-card"><div class="score-value" style="color:var(--wrong)">${gExtra}</div><div class="score-label">Extras</div></div>
+      </div>
+    </div>
+    <div class="report-body">
+      <div style="display:flex;gap:0.8rem;flex-wrap:wrap;margin-bottom:1rem;padding:0.8rem 1rem;background:var(--bg-primary);border-radius:8px;border:1px solid var(--border);">
+        <div class="cmp-legend-item" style="font-size:0.75rem;"><span class="cmp-legend-swatch" style="background:var(--correct);"></span> Acerto exato</div>
+        <div class="cmp-legend-item" style="font-size:0.75rem;"><span class="cmp-legend-swatch" style="background:#f97316;"></span> Categoria diferente</div>
+        <div class="cmp-legend-item" style="font-size:0.75rem;"><span class="cmp-legend-swatch" style="background:var(--missed);border:1px dashed var(--missed);"></span> Não marcado</div>
+        <div class="cmp-legend-item" style="font-size:0.75rem;"><span class="cmp-legend-swatch" style="background:var(--wrong);"></span> Marcação extra</div>
+      </div>
+      ${casesHtml}
+      <div class="report-actions">
+        <button class="btn" onclick="printFinalReport()">🖨 Imprimir Relatório</button>
+        <button class="btn btn-primary" onclick="closeFinalReport()">✕ Fechar Relatório</button>
+      </div>
+    </div>
+  </div>`;
+
+  overlay.style.display = 'flex';
+  overlay.scrollTop = 0;
+  document.body.style.overflow = 'hidden';
+}
+
+function closeFinalReport() {
+  document.getElementById('finalReportOverlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function printFinalReport() {
+  const overlay = document.getElementById('finalReportOverlay');
+  const content = overlay.querySelector('.final-report').outerHTML;
+
+  // Collect current styles
+  const styles = document.querySelector('style').textContent;
+
+  const printHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>CoCoPop — Relatório Final</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Source+Sans+3:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+  ${styles}
+  body { background: var(--bg-primary); color: var(--text-primary); font-family: 'Source Sans 3', sans-serif; }
+  .final-report { max-width: 100%; border: none; border-radius: 0; }
+  .final-report-overlay { position: static; display: block !important; background: none; padding: 0; overflow: visible; }
+  .report-actions { display: none !important; }
+  .report-case { break-inside: avoid; page-break-inside: avoid; }
+  .report-case.collapsed .report-case-body { display: block !important; }
+  @media print {
+    body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .report-case { break-inside: avoid; }
+  }
+  </style></head><body>${content}</body></html>`;
+
+  const w = window.open('', '_blank', 'width=900,height=700');
+  if (!w) { toast('Permita popups para imprimir'); return; }
+  w.document.write(printHtml);
+  w.document.close();
+  w.onload = () => setTimeout(() => { w.focus(); w.print(); }, 600);
+  setTimeout(() => { if (!w.closed) { w.focus(); w.print(); } }, 2500);
+}
+
 // ─── Keyboard ───
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { selectTool(null); document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active')); }
+  if (e.key === 'Escape') {
+    if (document.getElementById('finalReportOverlay').style.display === 'flex') {
+      closeFinalReport(); return;
+    }
+    selectTool(null); document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+  }
   if (!e.target.matches('input,textarea,select')) {
     if (e.key === '1') selectTool('Co');
     if (e.key === '2') selectTool('Cx');
@@ -1203,6 +1553,11 @@ function toast(msg) {
 document.addEventListener('DOMContentLoaded', async () => {
   initDragSelect();
   restoreStates();
+
+  // Close report overlay on background click
+  document.getElementById('finalReportOverlay').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeFinalReport();
+  });
 
   // Check URL param for gist override
   const params = new URLSearchParams(window.location.search);
