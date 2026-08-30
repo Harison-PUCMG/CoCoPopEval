@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="auto">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -35,6 +35,72 @@
   --text-muted: #6E7681;
   --border: #30363D;
   --accent: #58A6FF;
+}
+
+/* Tema Claro */
+html[data-theme="light"] {
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F5F6F8;
+  --bg-tertiary: #EAF0F7;
+  --bg-card: #F9FAFC;
+  --text-primary: #0D1117;
+  --text-secondary: #24292F;
+  --text-muted: #57606A;
+  --border: #CACFD6;
+  --accent: #0969DA;
+  /* Categorias com melhor contraste */
+  --condition: #DA3633;
+  --condition-bg: #FFEBEE;
+  --condition-border: #E8505B;
+  --context: #1B7A6D;
+  --context-bg: #E8F5F2;
+  --context-border: #229E8F;
+  --population: #C79C2E;
+  --population-bg: #FEF8E7;
+  --population-border: #D4A723;
+  --correct: #1A7F0F;
+  --correct-bg: #DFFCF0;
+  --correct-border: #2DA44E;
+  --wrong: #D1242F;
+  --wrong-bg: #FFEBE9;
+  --wrong-border: #DA3633;
+  --missed: #7C3AED;
+  --missed-bg: #F3E8FF;
+  --missed-border: #A78BFA;
+}
+
+/* Respeitar preferência do navegador se data-theme="auto" */
+@media (prefers-color-scheme: light) {
+  html[data-theme="auto"] {
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #F5F6F8;
+    --bg-tertiary: #EAF0F7;
+    --bg-card: #F9FAFC;
+    --text-primary: #0D1117;
+    --text-secondary: #24292F;
+    --text-muted: #57606A;
+    --border: #CACFD6;
+    --accent: #0969DA;
+    /* Categorias com melhor contraste */
+    --condition: #DA3633;
+    --condition-bg: #FFEBEE;
+    --condition-border: #E8505B;
+    --context: #1B7A6D;
+    --context-bg: #E8F5F2;
+    --context-border: #229E8F;
+    --population: #C79C2E;
+    --population-bg: #FEF8E7;
+    --population-border: #D4A723;
+    --correct: #1A7F0F;
+    --correct-bg: #DFFCF0;
+    --correct-border: #2DA44E;
+    --wrong: #D1242F;
+    --wrong-bg: #FFEBE9;
+    --wrong-border: #DA3633;
+    --missed: #7C3AED;
+    --missed-bg: #F3E8FF;
+    --missed-border: #A78BFA;
+  }
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
@@ -698,6 +764,7 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
   </div>
   <div class="header-right">
     <span class="mode-badge" id="modeBadge">ALUNO</span>
+    <button class="btn btn-icon" onclick="toggleTheme()" title="Alternar tema (claro/escuro)" id="themeToggle">🌙</button>
     <button class="btn btn-icon" onclick="toggleAdmin()" title="Configurações">⚙️</button>
   </div>
 </header>
@@ -857,6 +924,43 @@ textarea::placeholder, input::placeholder { color: var(--text-muted); }
 </div>
 
 <script>
+// ─── Theme Management ───
+function initTheme() {
+  const saved = localStorage.getItem('cococop-theme');
+  const html = document.documentElement;
+  
+  if (saved) {
+    html.setAttribute('data-theme', saved);
+  } else {
+    // Detectar preferência do navegador
+    const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+    html.setAttribute('data-theme', prefersLight ? 'light' : 'dark');
+  }
+  
+  updateThemeButton();
+}
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme') || 'auto';
+  const next = current === 'dark' ? 'light' : 'dark';
+  
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('cococop-theme', next);
+  updateThemeButton();
+}
+
+function updateThemeButton() {
+  const html = document.documentElement;
+  const theme = html.getAttribute('data-theme') || 'auto';
+  const btn = document.getElementById('themeToggle');
+  
+  if (btn) {
+    btn.textContent = theme === 'light' ? '☀️' : '🌙';
+    btn.title = theme === 'light' ? 'Alternar para tema escuro' : 'Alternar para tema claro';
+  }
+}
+
 // ─── State ───
 const DEFAULT_GIST = 'https://gist.github.com/Harison-PUCMG/872dde374545f17cf33a9b9899a1b5b0';
 let cases = [];
@@ -1680,6 +1784,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const params = new URLSearchParams(window.location.search);
   const gistParam = params.get('gist');
 
+  initTheme();
+  
   const url = gistParam || getStoredGistUrl() || DEFAULT_GIST;
   document.getElementById('gistUrlInput').value = url;
 
